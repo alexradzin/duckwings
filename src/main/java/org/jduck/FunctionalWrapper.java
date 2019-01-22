@@ -6,7 +6,6 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -46,21 +45,17 @@ public class FunctionalWrapper<T, I> implements Wrapper<T, I> {
 
 
     public FunctionalWrapper<T, I> using(Function<I, Object> facefunc, Function<T, Object> classfunc) {
-        @SuppressWarnings("unchecked")
-        I proxy = (I)Proxy.newProxyInstance(
-                Thread.currentThread().getContextClassLoader(),
-                new Class[]{face},
-                (p, method, args) -> {
-            functions.put(method, classfunc);
-            return defaultValue.get(method.getReturnType());
-        });
-
-        facefunc.apply(proxy);
+        facefunc.apply(functionCollectingProxy(classfunc));
         return this;
     }
 
 
     public <P> FunctionalWrapper<T, I> using(BiFunction<I, Object, Object> facefunc, BiFunction<T, P, Object> classfunc) {
+        facefunc.apply(functionCollectingProxy(classfunc), null);
+        return this;
+    }
+
+    private I functionCollectingProxy(Object classfunc) {
         @SuppressWarnings("unchecked")
         I proxy = (I)Proxy.newProxyInstance(
                 Thread.currentThread().getContextClassLoader(),
@@ -70,9 +65,9 @@ public class FunctionalWrapper<T, I> implements Wrapper<T, I> {
                     return defaultValue.get(method.getReturnType());
                 });
 
-        facefunc.apply(proxy, null);
-        return this;
+        return proxy;
     }
+
 
 
     @Override
@@ -122,12 +117,5 @@ public class FunctionalWrapper<T, I> implements Wrapper<T, I> {
     @SuppressWarnings("unchecked")
     public static <E extends Throwable> void sneakyThrow(Throwable e) throws E {
         throw (E) e;
-    }
-
-
-    public static void main(String[] args) {
-        System.out.println(new FunctionalWrapper<String, CharSequence>(CharSequence.class, Optional.empty(), Optional.empty()).using(CharSequence::length, String::length).wrap("hello").length());
-        System.out.println(new FunctionalWrapper<String, Collection>(Collection.class, Optional.empty(), Optional.empty()).using(Collection::size, String::length).wrap("hello").size());
-
     }
 }
