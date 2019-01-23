@@ -5,42 +5,21 @@ import org.jduck.internal.MethodComparator;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public class FunctionalWrapper<T, I> implements Wrapper<T, I> {
-    private final Class<I> face;
-    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    private final Optional<Function<Method, Throwable>> constructionFailure;
-    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    private final Optional<Function<Method, Throwable>> runtimeFailure;
-
-    private final Map<Class, Object> defaultValue = new HashMap<Class, Object>() {{
-        put(byte.class, 0);
-        put(short.class, 0);
-        put(int.class, 0);
-        put(long.class, 0);
-        put(char.class, 0);
-        put(float.class, 0.0F);
-        put(double.class, 0.0);
-        put(boolean.class, false);
-    }};
-
-
+public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
     private Map<Method, Object> functions = new TreeMap<>(new MethodComparator());
 
-    public FunctionalWrapper(
+    FunctionalWrapper(
             Class<I> face,
             @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<Function<Method, Throwable>> constructionFailure,
             @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<Function<Method, Throwable>> runtimeFailure) {
-        this.face = face;
-        this.constructionFailure = constructionFailure;
-        this.runtimeFailure = runtimeFailure;
+        super(face, constructionFailure, runtimeFailure);
     }
 
 
@@ -71,21 +50,14 @@ public class FunctionalWrapper<T, I> implements Wrapper<T, I> {
 
 
     @Override
-    public I wrap(T target) {
-        if(constructionFailure.isPresent()) {
-            Optional<Method> missingMethod = Arrays.stream(face.getMethods()).filter(m -> !functions.containsKey(m)).findFirst();
-            missingMethod.ifPresent(method -> sneakyThrow(constructionFailure.get().apply(method)));
-        }
-
-        @SuppressWarnings("unchecked")
-        I proxy = (I) Proxy.newProxyInstance(
-                Thread.currentThread().getContextClassLoader(),
-                new Class[] {face},
-                new FunctionalInvocationHandler(target));
-
-        return proxy;
+    protected Collection<Method> definedMethods(T target) {
+        return functions.keySet();
     }
 
+    @Override
+    protected InvocationHandler createInvocationHandler(T target) {
+        return new FunctionalInvocationHandler(target);
+    }
 
     private class FunctionalInvocationHandler implements InvocationHandler {
         private final T target;
@@ -111,11 +83,5 @@ public class FunctionalWrapper<T, I> implements Wrapper<T, I> {
                 return defaultValue.get(method.getReturnType());
             };
         }
-    }
-
-
-    @SuppressWarnings("unchecked")
-    public static <E extends Throwable> void sneakyThrow(Throwable e) throws E {
-        throw (E) e;
     }
 }
