@@ -17,13 +17,13 @@ public class JDuck<T, I> {
         private Optional<Function<Method, Throwable>> runtimeFailure = Optional.empty();
 
 
-        public WrapperBuilder throwIfAbsentDuringBuilding(@SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<Function<Method, Throwable>> constructionFailure) {
-            this.constructionFailure = constructionFailure;
+        public WrapperBuilder throwIfAbsentDuringBuilding(Function<Method, Throwable> constructionFailure) {
+            this.constructionFailure = Optional.of(constructionFailure);
             return this;
         }
 
-        public WrapperBuilder throwIfAbsentAtRuntime(@SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<Function<Method, Throwable>> runtimeFailure) {
-            this.runtimeFailure = runtimeFailure;
+        public WrapperBuilder throwIfAbsentAtRuntime(Function<Method, Throwable> runtimeFailure) {
+            this.runtimeFailure = Optional.of(runtimeFailure);
             return this;
         }
 

@@ -2,10 +2,14 @@ package org.jduck;
 
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.UndeclaredThrowableException;
+import java.util.ArrayList;
 import java.util.Collection;
 
+import static java.lang.String.format;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JDuckTest {
@@ -45,6 +49,46 @@ class JDuckTest {
         assertTrue(wrapper.wrap("").isEmpty());
         assertTrue(collectionOverString.contains("f"));
         assertFalse(collectionOverString.contains("Z"));
+    }
+
+
+    @Test
+    void throwIfAbsentDuringBuildingWhenMethodIsMissing() {
+        NoSuchMethodException e = assertThrows(
+                NoSuchMethodException.class,
+                () -> JDuck.builder()
+                    .throwIfAbsentDuringBuilding((m) -> new NoSuchMethodException(format("Method %s does not exist", m.getName())))
+                    .reflect(Length.class).wrap(new ArrayList<>())
+        );
+        assertEquals("Method length does not exist", e.getMessage());
+    }
+
+
+    @Test
+    void throwIfAbsentDuringBuildingWhenMethodExists() {
+        JDuck.builder()
+                .throwIfAbsentDuringBuilding((m) -> new NoSuchMethodException(format("Method %s does not exist", m.getName())))
+                .reflect(Length.class).wrap(""); // method length exists in class String
+    }
+
+    @Test
+    void throwIfAbsentAtRuntimeWhenMethodIsMissing() {
+        // Length does not exist in List but this line should not cause exception because the method is validated at runtime only
+        Length wrappedLength = JDuck.builder()
+                .throwIfAbsentAtRuntime((m) -> new NoSuchMethodException(format("Method %s does not exist", m.getName())))
+                .reflect(Length.class).wrap(new ArrayList<>());
+
+        UndeclaredThrowableException e = assertThrows(UndeclaredThrowableException.class, wrappedLength::length);
+        assertEquals("Method length does not exist", e.getCause().getMessage());
+    }
+
+
+    @Test
+    void throwIfAbsentAtRuntimeWhenMethodExists() {
+        assertEquals("hello".length(),
+                JDuck.builder()
+                .throwIfAbsentAtRuntime((m) -> new NoSuchMethodException(format("Method %s does not exist", m.getName())))
+                .reflect(Length.class).wrap("hello").length());
     }
 
 
