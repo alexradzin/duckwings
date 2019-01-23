@@ -21,7 +21,7 @@ abstract class BaseWrapper<T, I> implements Wrapper<T, I> {
         put(byte.class, 0);
         put(short.class, 0);
         put(int.class, 0);
-        put(long.class, 0);
+        put(long.class, 0L);
         put(char.class, 0);
         put(float.class, 0.0F);
         put(double.class, 0.0);

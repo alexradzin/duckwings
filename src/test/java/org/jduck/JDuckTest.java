@@ -92,8 +92,33 @@ class JDuckTest {
     }
 
 
+    @Test
+    void functionalStringAddFunctions() {
+        Wrapper<String, ExtendedString> wrapper = JDuck.builder().functional(ExtendedString.class, String.class)
+                .using(ExtendedString::toInt, Integer::parseInt)
+                .using(ExtendedString::toLong, Long::parseLong)
+                .using(ExtendedString::toBoolean, Boolean::parseBoolean)
+                .using(ExtendedString::startsWithIgnoreCase, (s, s2) -> s.toLowerCase().startsWith(s2.toLowerCase()));
+
+
+        assertEquals(5, wrapper.wrap("5").toInt());
+        long now = System.currentTimeMillis();
+        assertEquals(now, wrapper.wrap("" + now).toLong());
+        assertTrue(wrapper.wrap("true").toBoolean());
+        assertFalse(wrapper.wrap("false").toBoolean());
+        assertTrue(wrapper.wrap("Hello").startsWithIgnoreCase("hell"));
+        assertFalse(wrapper.wrap("Hello").startsWithIgnoreCase("heaven"));
+    }
+
+
     interface Length {
         int length();
     }
 
+    interface ExtendedString {
+        int toInt();
+        long toLong();
+        boolean toBoolean();
+        boolean startsWithIgnoreCase(String other);
+    }
 }

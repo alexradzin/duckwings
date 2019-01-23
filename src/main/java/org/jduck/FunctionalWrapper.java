@@ -29,7 +29,7 @@ public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
     }
 
 
-    public <P> FunctionalWrapper<T, I> using(BiFunction<I, Object, Object> facefunc, BiFunction<T, P, Object> classfunc) {
+    public <P, R> FunctionalWrapper<T, I> using(BiFunction<I, P, R> facefunc, BiFunction<T, P, R> classfunc) {
         facefunc.apply(functionCollectingProxy(classfunc), null);
         return this;
     }
