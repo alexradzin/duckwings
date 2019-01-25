@@ -13,7 +13,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
-    private Map<Method, Object> functions = new TreeMap<>(new MethodComparator());
+    private Map<Method, FunctionContainer<?>> functions = new TreeMap<>(new MethodComparator());
 
     FunctionalWrapper(
             Class<I> face,
@@ -24,23 +24,25 @@ public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
 
 
     public FunctionalWrapper<T, I> using(Function<I, Object> facefunc, Function<T, Object> classfunc) {
-        facefunc.apply(functionCollectingProxy(classfunc));
+        facefunc.apply(functionCollectingProxy(classfunc, NoArgFunctionContainer::new));
         return this;
     }
 
 
+    @SuppressWarnings("LambdaBodyCanBeCodeBlock")
     public <P, R> FunctionalWrapper<T, I> using(BiFunction<I, P, R> facefunc, BiFunction<T, P, R> classfunc) {
-        facefunc.apply(functionCollectingProxy(classfunc), null);
+//        facefunc.apply(functionCollectingProxy(classfunc, OneArgFunctionContainer::new), null); // for some reason labda does not work
+        facefunc.apply(functionCollectingProxy(classfunc, f -> new OneArgFunctionContainer<>(f)), null);
         return this;
     }
 
-    private I functionCollectingProxy(Object classfunc) {
+    private <F> I functionCollectingProxy(F classfunc, Function<F, FunctionContainer> containerFactory) {
         @SuppressWarnings("unchecked")
         I proxy = (I)Proxy.newProxyInstance(
                 Thread.currentThread().getContextClassLoader(),
                 new Class[]{face},
                 (p, method, args) -> {
-                    functions.put(method, classfunc);
+                    functions.put(method, containerFactory.apply(classfunc));
                     return defaultValue.get(method.getReturnType());
                 });
 
@@ -73,15 +75,50 @@ public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
         @SuppressWarnings("unchecked")
         private Function<Object[], Object> invoker(Method method) {
             return args -> {
-                Object function = functions.get(method);
-                if(function instanceof Function) {
-                    return ((Function)function).apply(target);
-                } else if (function instanceof BiFunction) {
-                    return ((BiFunction)function).apply(target, args.length >= 1 ? args[0] : null);
+                FunctionContainer<?> container = functions.get(method);
+                if (container != null) {
+                    return container.eval(target, args);
                 }
+
                 runtimeFailure.ifPresent(methodThrowableFunction -> sneakyThrow(methodThrowableFunction.apply(method)));
                 return defaultValue.get(method.getReturnType());
             };
         }
     }
+
+    private abstract class FunctionContainer<F> {
+        protected final F function;
+
+        public FunctionContainer(F function) {
+            this.function = function;
+        }
+
+        public abstract Object eval(T target, Object[] args);
+    }
+
+    private class NoArgFunctionContainer extends FunctionContainer<Function<T, Object>> {
+        public NoArgFunctionContainer(Function<T, Object> function) {
+            super(function);
+        }
+
+        @Override
+        public Object eval(T target, Object[] args) {
+            return function.apply(target);
+        }
+    }
+
+    private class OneArgFunctionContainer<P, R> extends FunctionContainer<BiFunction<T, P, R>> {
+        public OneArgFunctionContainer(BiFunction<T, P, R> function) {
+            super(function);
+        }
+
+        @Override
+        public Object eval(T target, Object[] args) {
+            @SuppressWarnings("unchecked")
+            P arg = (P)args[0];
+            return function.apply(target, arg);
+        }
+    }
+
+
 }

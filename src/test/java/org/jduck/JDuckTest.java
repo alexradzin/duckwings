@@ -110,6 +110,13 @@ class JDuckTest {
         assertFalse(wrapper.wrap("Hello").startsWithIgnoreCase("heaven"));
     }
 
+    @Test
+    void functionalStringAddFunctionsWithDefaultValue() {
+        Wrapper<String, StrangeOperations> wrapper = JDuck.builder().functional(StrangeOperations.class, String.class)
+                .using(StrangeOperations::tail, s -> s.substring(s.length() - 10));
+        assertEquals("ello world", wrapper.wrap("hello world").tail());
+    }
+
 
     interface Length {
         int length();
@@ -120,5 +127,9 @@ class JDuckTest {
         long toLong();
         boolean toBoolean();
         boolean startsWithIgnoreCase(String other);
+    }
+
+    interface StrangeOperations {
+        String tail();
     }
 }
