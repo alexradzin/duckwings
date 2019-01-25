@@ -98,7 +98,9 @@ class JDuckTest {
                 .using(ExtendedString::toInt, Integer::parseInt)
                 .using(ExtendedString::toLong, Long::parseLong)
                 .using(ExtendedString::toBoolean, Boolean::parseBoolean)
-                .using(ExtendedString::startsWithIgnoreCase, (s, s2) -> s.toLowerCase().startsWith(s2.toLowerCase()));
+                .using(ExtendedString::startsWithIgnoreCase, (s, s2) -> s.toLowerCase().startsWith(s2.toLowerCase()))
+                .using(ExtendedString::substring, String::substring);
+
 
 
         assertEquals(5, wrapper.wrap("5").toInt());
@@ -108,6 +110,16 @@ class JDuckTest {
         assertFalse(wrapper.wrap("false").toBoolean());
         assertTrue(wrapper.wrap("Hello").startsWithIgnoreCase("hell"));
         assertFalse(wrapper.wrap("Hello").startsWithIgnoreCase("heaven"));
+        assertEquals("Hello".substring(2, 3), wrapper.wrap("Hello").substring(2, 3));
+    }
+
+
+    @Test
+    void functionalStringAddFunctionsTwoArgs() {
+        Wrapper<String, ExtendedString> wrapper = JDuck.builder().functional(ExtendedString.class, String.class)
+                .using(ExtendedString::substring, String::substring);
+
+        assertEquals("Hello".substring(2, 3), wrapper.wrap("Hello").substring(2, 3));
     }
 
     @Test
@@ -127,6 +139,7 @@ class JDuckTest {
         long toLong();
         boolean toBoolean();
         boolean startsWithIgnoreCase(String other);
+        String substring(Integer start, Integer end);
     }
 
     interface StrangeOperations {

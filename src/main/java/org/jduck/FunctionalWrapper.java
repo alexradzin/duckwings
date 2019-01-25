@@ -1,6 +1,8 @@
 package org.jduck;
 
 import org.jduck.internal.MethodComparator;
+import org.jduck.internal.TetraFunction;
+import org.jduck.internal.TriFunction;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -35,6 +37,17 @@ public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
         facefunc.apply(functionCollectingProxy(classfunc, f -> new OneArgFunctionContainer<>(f)), null);
         return this;
     }
+
+    public <P1, P2, R> FunctionalWrapper<T, I> using(TriFunction<I, P1, P2, R> facefunc, TriFunction<T, P1, P2, R>  classfunc) {
+        facefunc.apply(functionCollectingProxy(classfunc, f -> new TwoArgFunctionContainer(f)), null, null);
+        return this;
+    }
+
+    public <P1, P2, P3, R> FunctionalWrapper<T, I> using(TetraFunction<I, P1, P2, P3, R> facefunc, TetraFunction<T, P1, P2, P3, R>  classfunc) {
+        facefunc.apply(functionCollectingProxy(classfunc, f -> new ThreeArgFunctionContainer(f)), null, null, null);
+        return this;
+    }
+
 
     private <F> I functionCollectingProxy(F classfunc, Function<F, FunctionContainer> containerFactory) {
         @SuppressWarnings("unchecked")
@@ -120,5 +133,30 @@ public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
         }
     }
 
+    private class TwoArgFunctionContainer<P1, P2, R> extends FunctionContainer<TriFunction<T, P1, P2, R>> {
+        public TwoArgFunctionContainer(TriFunction<T, P1, P2, R> function) {
+            super(function);
+        }
 
+        @Override
+        public Object eval(T target, Object[] args) {
+            @SuppressWarnings("unchecked") P1 arg1 = (P1)args[0];
+            @SuppressWarnings("unchecked") P2 arg2 = (P2)args[1];
+            return function.apply(target, arg1, arg2);
+        }
+    }
+
+    private class ThreeArgFunctionContainer<P1, P2, P3, R> extends FunctionContainer<TetraFunction<T, P1, P2, P3, R>> {
+        public ThreeArgFunctionContainer(TetraFunction<T, P1, P2, P3, R>function) {
+            super(function);
+        }
+
+        @Override
+        public Object eval(T target, Object[] args) {
+            @SuppressWarnings("unchecked") P1 arg1 = (P1)args[0];
+            @SuppressWarnings("unchecked") P2 arg2 = (P2)args[1];
+            @SuppressWarnings("unchecked") P3 arg3 = (P3)args[2];
+            return function.apply(target, arg1, arg2, arg3);
+        }
+    }
 }
