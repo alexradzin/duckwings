@@ -3,6 +3,7 @@ package org.jduck;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -18,15 +19,17 @@ abstract class BaseWrapper<T, I> implements Wrapper<T, I> {
     protected final Optional<Function<Method, Throwable>> runtimeFailure;
 
     protected final Map<Class, Object> defaultValue = new HashMap<Class, Object>() {{
-        put(byte.class, 0);
-        put(short.class, 0);
+        put(byte.class, (byte)0);
+        put(short.class, (short)0);
         put(int.class, 0);
         put(long.class, 0L);
-        put(char.class, 0);
+        put(char.class, (char)0);
         put(float.class, 0.0F);
         put(double.class, 0.0);
         put(boolean.class, false);
     }};
+
+    protected final Collection<Object> defaultValues;
 
     protected BaseWrapper(
             Class<I> face,
@@ -35,6 +38,11 @@ abstract class BaseWrapper<T, I> implements Wrapper<T, I> {
         this.face = face;
         this.constructionFailure = constructionFailure;
         this.runtimeFailure = runtimeFailure;
+
+        Collection<Object> values = new ArrayList<>();
+        values.add(null);
+        values.addAll(defaultValue.values());
+        defaultValues = values;
     }
 
     @Override

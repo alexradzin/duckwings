@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import static java.lang.String.format;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -111,16 +112,32 @@ class JDuckTest {
         assertTrue(wrapper.wrap("Hello").startsWithIgnoreCase("hell"));
         assertFalse(wrapper.wrap("Hello").startsWithIgnoreCase("heaven"));
         assertEquals("Hello".substring(2, 3), wrapper.wrap("Hello").substring(2, 3));
-    }
+      }
 
+    @Test
+    void functionalStringAddFunctionsOneIntArg() {
+        Wrapper<String, ExtendedString> wrapper = JDuck.builder().functional(ExtendedString.class, String.class)
+                .using(ExtendedString::charAt, String::charAt);
+
+        ExtendedString hello = wrapper.wrap("Hello");
+        assertEquals('H', hello.charAt(0));
+
+    }
 
     @Test
     void functionalStringAddFunctionsTwoArgs() {
         Wrapper<String, ExtendedString> wrapper = JDuck.builder().functional(ExtendedString.class, String.class)
                 .using(ExtendedString::substring, String::substring);
-
         assertEquals("Hello".substring(2, 3), wrapper.wrap("Hello").substring(2, 3));
     }
+
+    @Test
+    void functionalStringAddFunctionsThreeArgs() {
+        Wrapper<StringBuilder, ExtendedString> wrapper = JDuck.builder().functional(ExtendedString.class, StringBuilder.class)
+                .using(ExtendedString::replace, StringBuilder::replace);
+        assertEquals(new StringBuilder("Hello").replace(2, 4, "LL").toString(), wrapper.wrap(new StringBuilder("Hello")).replace(2, 4, "LL").toString());
+    }
+
 
     @Test
     void functionalStringAddFunctionsWithDefaultValue() {
@@ -128,6 +145,34 @@ class JDuckTest {
                 .using(StrangeOperations::tail, s -> s.substring(s.length() - 10));
         assertEquals("ello world", wrapper.wrap("hello world").tail());
     }
+
+    @Test
+    void throwIfAbsentAtRuntimeWhenFunctionExists() {
+        // Although method length() does not exit in List exception will not be thrown here. It will be thrown in runtime, i.e. during method invocation
+        JDuck.builder()
+                .throwIfAbsentAtRuntime((m) -> new NoSuchMethodException(format("Method %s does not exist", m.getName())))
+                .functional(Length.class, List.class).wrap(new ArrayList());
+
+
+        UndeclaredThrowableException e = assertThrows(
+                UndeclaredThrowableException.class,
+                () -> JDuck.builder()
+                        .throwIfAbsentAtRuntime((m) -> new NoSuchMethodException(format("Method %s does not exist", m.getName())))
+                        .functional(Length.class, List.class).wrap(new ArrayList()).length());
+        assertEquals(NoSuchMethodException.class, e.getCause().getClass());
+        assertEquals("Method length does not exist", e.getCause().getMessage());
+    }
+
+    @Test
+    void throwIfAbsentDuringBuildingWhenFunctionExists() {
+        NoSuchMethodException e = assertThrows(
+                NoSuchMethodException.class,
+                () -> JDuck.builder()
+                        .throwIfAbsentDuringBuilding((m) -> new NoSuchMethodException(format("Method %s does not exist", m.getName())))
+                        .functional(Length.class, List.class).wrap(new ArrayList()));
+        assertEquals("Method length does not exist", e.getMessage());
+    }
+
 
 
     interface Length {
@@ -139,7 +184,9 @@ class JDuckTest {
         long toLong();
         boolean toBoolean();
         boolean startsWithIgnoreCase(String other);
-        String substring(Integer start, Integer end);
+        char charAt(int pos);
+        String substring(int start, int end);
+        StringBuilder replace(int from, int to, String replacement);
     }
 
     interface StrangeOperations {
