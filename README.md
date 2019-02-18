@@ -18,8 +18,8 @@ One can say that the right solution is just to change the model: define proper i
 The problem is that this is not always possible: model may be already released or/and a third party code. Moreover in some cases 
 we have to work with classes developed by different companies (e.g. `Book` is from company A and `Magazine` from company B). 
 
-## Need to imagine something and something else
-* String can be imagined as a list of characters. 
+## Need to represent something and something else
+* String can be represented as a list of characters. 
 * It may be useful to think about repeating call of `Random.nextInt()` as infinite `Iterator<Integer>` that produces random integers. 
 
 # Description
