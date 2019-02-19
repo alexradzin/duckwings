@@ -1,4 +1,4 @@
-# DuckWings
+# DuckWings [![CircleCI](https://circleci.com/gh/alexradzin/duckwings.svg?style=svg)](https://circleci.com/gh/alexradzin/duckwings)
 DuckTyping implementation for Java
 
 # From Wikipedia
