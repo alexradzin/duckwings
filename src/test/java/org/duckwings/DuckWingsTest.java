@@ -1,4 +1,4 @@
-package org.jduck;
+package org.duckwings;
 
 import org.junit.jupiter.api.Test;
 
@@ -13,31 +13,31 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class JDuckTest {
+class DuckWingsTest {
     @Test
     void reflectiveStringAsCharSequenceLength() {
-       assertEquals("hello".length(), JDuck.builder().reflect(CharSequence.class).wrap("hello").length());
+       assertEquals("hello".length(), DuckWings.builder().reflect(CharSequence.class).wrap("hello").length());
     }
 
     @Test
     void reflectiveStringAsLength() {
-        assertEquals("world".length(), JDuck.builder().reflect(Length.class).wrap("world").length());
+        assertEquals("world".length(), DuckWings.builder().reflect(Length.class).wrap("world").length());
     }
 
     @Test
     void functionalString() {
-        assertEquals("function".length(), JDuck.builder().functional(Length.class, String.class).using(Length::length, String::length).wrap("function").length());
+        assertEquals("function".length(), DuckWings.builder().functional(Length.class, String.class).using(Length::length, String::length).wrap("function").length());
     }
 
     @Test
     void functionalStringAsCollectionLength() {
-        assertEquals("function".length(), JDuck.builder().functional(Collection.class, String.class).using(Collection::size, String::length).wrap("function").size());
+        assertEquals("function".length(), DuckWings.builder().functional(Collection.class, String.class).using(Collection::size, String::length).wrap("function").size());
     }
 
     @Test
     void functionalStringAsCollection() {
 
-        Wrapper<String, Collection> wrapper = JDuck.builder().functional(Collection.class, String.class)
+        Wrapper<String, Collection> wrapper = DuckWings.builder().functional(Collection.class, String.class)
                 .using(Collection::size, String::length)
                 .using(Collection::isEmpty, String::isEmpty)
                 .using(Collection::contains, String::contains);
@@ -57,7 +57,7 @@ class JDuckTest {
     void throwIfAbsentDuringBuildingWhenMethodIsMissing() {
         NoSuchMethodException e = assertThrows(
                 NoSuchMethodException.class,
-                () -> JDuck.builder()
+                () -> DuckWings.builder()
                     .throwIfAbsentDuringBuilding((m) -> new NoSuchMethodException(format("Method %s does not exist", m.getName())))
                     .reflect(Length.class).wrap(new ArrayList<>())
         );
@@ -67,7 +67,7 @@ class JDuckTest {
 
     @Test
     void throwIfAbsentDuringBuildingWhenMethodExists() {
-        JDuck.builder()
+        DuckWings.builder()
                 .throwIfAbsentDuringBuilding((m) -> new NoSuchMethodException(format("Method %s does not exist", m.getName())))
                 .reflect(Length.class).wrap(""); // method length exists in class String
     }
@@ -75,7 +75,7 @@ class JDuckTest {
     @Test
     void throwIfAbsentAtRuntimeWhenMethodIsMissing() {
         // Length does not exist in List but this line should not cause exception because the method is validated at runtime only
-        Length wrappedLength = JDuck.builder()
+        Length wrappedLength = DuckWings.builder()
                 .throwIfAbsentAtRuntime((m) -> new NoSuchMethodException(format("Method %s does not exist", m.getName())))
                 .reflect(Length.class).wrap(new ArrayList<>());
 
@@ -87,7 +87,7 @@ class JDuckTest {
     @Test
     void throwIfAbsentAtRuntimeWhenMethodExists() {
         assertEquals("hello".length(),
-                JDuck.builder()
+                DuckWings.builder()
                 .throwIfAbsentAtRuntime((m) -> new NoSuchMethodException(format("Method %s does not exist", m.getName())))
                 .reflect(Length.class).wrap("hello").length());
     }
@@ -95,7 +95,7 @@ class JDuckTest {
 
     @Test
     void functionalStringAddFunctions() {
-        Wrapper<String, ExtendedString> wrapper = JDuck.builder().functional(ExtendedString.class, String.class)
+        Wrapper<String, ExtendedString> wrapper = DuckWings.builder().functional(ExtendedString.class, String.class)
                 .using(ExtendedString::toInt, Integer::parseInt)
                 .using(ExtendedString::toLong, Long::parseLong)
                 .using(ExtendedString::toBoolean, Boolean::parseBoolean)
@@ -116,7 +116,7 @@ class JDuckTest {
 
     @Test
     void functionalStringAddFunctionsOneIntArg() {
-        Wrapper<String, ExtendedString> wrapper = JDuck.builder().functional(ExtendedString.class, String.class)
+        Wrapper<String, ExtendedString> wrapper = DuckWings.builder().functional(ExtendedString.class, String.class)
                 .using(ExtendedString::charAt, String::charAt);
 
         ExtendedString hello = wrapper.wrap("Hello");
@@ -126,14 +126,14 @@ class JDuckTest {
 
     @Test
     void functionalStringAddFunctionsTwoArgs() {
-        Wrapper<String, ExtendedString> wrapper = JDuck.builder().functional(ExtendedString.class, String.class)
+        Wrapper<String, ExtendedString> wrapper = DuckWings.builder().functional(ExtendedString.class, String.class)
                 .using(ExtendedString::substring, String::substring);
         assertEquals("Hello".substring(2, 3), wrapper.wrap("Hello").substring(2, 3));
     }
 
     @Test
     void functionalStringAddFunctionsThreeArgs() {
-        Wrapper<StringBuilder, ExtendedString> wrapper = JDuck.builder().functional(ExtendedString.class, StringBuilder.class)
+        Wrapper<StringBuilder, ExtendedString> wrapper = DuckWings.builder().functional(ExtendedString.class, StringBuilder.class)
                 .using(ExtendedString::replace, StringBuilder::replace);
         assertEquals(new StringBuilder("Hello").replace(2, 4, "LL").toString(), wrapper.wrap(new StringBuilder("Hello")).replace(2, 4, "LL").toString());
     }
@@ -141,7 +141,7 @@ class JDuckTest {
 
     @Test
     void functionalStringAddFunctionsWithDefaultValue() {
-        Wrapper<String, StrangeOperations> wrapper = JDuck.builder().functional(StrangeOperations.class, String.class)
+        Wrapper<String, StrangeOperations> wrapper = DuckWings.builder().functional(StrangeOperations.class, String.class)
                 .using(StrangeOperations::tail, s -> s.substring(s.length() - 10));
         assertEquals("ello world", wrapper.wrap("hello world").tail());
     }
@@ -149,14 +149,14 @@ class JDuckTest {
     @Test
     void throwIfAbsentAtRuntimeWhenFunctionExists() {
         // Although method length() does not exit in List exception will not be thrown here. It will be thrown in runtime, i.e. during method invocation
-        JDuck.builder()
+        DuckWings.builder()
                 .throwIfAbsentAtRuntime((m) -> new NoSuchMethodException(format("Method %s does not exist", m.getName())))
                 .functional(Length.class, List.class).wrap(new ArrayList());
 
 
         UndeclaredThrowableException e = assertThrows(
                 UndeclaredThrowableException.class,
-                () -> JDuck.builder()
+                () -> DuckWings.builder()
                         .throwIfAbsentAtRuntime((m) -> new NoSuchMethodException(format("Method %s does not exist", m.getName())))
                         .functional(Length.class, List.class).wrap(new ArrayList()).length());
         assertEquals(NoSuchMethodException.class, e.getCause().getClass());
@@ -167,7 +167,7 @@ class JDuckTest {
     void throwIfAbsentDuringBuildingWhenFunctionExists() {
         NoSuchMethodException e = assertThrows(
                 NoSuchMethodException.class,
-                () -> JDuck.builder()
+                () -> DuckWings.builder()
                         .throwIfAbsentDuringBuilding((m) -> new NoSuchMethodException(format("Method %s does not exist", m.getName())))
                         .functional(Length.class, List.class).wrap(new ArrayList()));
         assertEquals("Method length does not exist", e.getMessage());

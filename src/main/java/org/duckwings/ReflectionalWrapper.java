@@ -1,6 +1,6 @@
-package org.jduck;
+package org.duckwings;
 
-import org.jduck.internal.MethodComparator;
+import org.duckwings.internal.MethodComparator;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;

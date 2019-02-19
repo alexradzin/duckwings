@@ -1,4 +1,4 @@
-# jduck
+# DuckWings
 DuckTyping implementation for Java
 
 # From Wikipedia

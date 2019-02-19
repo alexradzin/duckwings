@@ -1,4 +1,4 @@
-package org.jduck;
+package org.duckwings;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;

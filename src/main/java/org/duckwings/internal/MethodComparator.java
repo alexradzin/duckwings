@@ -1,4 +1,4 @@
-package org.jduck.internal;
+package org.duckwings.internal;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;

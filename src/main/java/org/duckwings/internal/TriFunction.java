@@ -1,4 +1,4 @@
-package org.jduck.internal;
+package org.duckwings.internal;
 
 /**
  * Similar to {@link java.util.function.BiFunction} but accepts 3 arguments.

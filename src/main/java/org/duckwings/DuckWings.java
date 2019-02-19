@@ -1,11 +1,11 @@
-package org.jduck;
+package org.duckwings;
 
 
 import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.function.Function;
 
-public class JDuck<T, I> {
+public class DuckWings<T, I> {
     public static WrapperBuilder builder() {
         return new WrapperBuilder();
     }

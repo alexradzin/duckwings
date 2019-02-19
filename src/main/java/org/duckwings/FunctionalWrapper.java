@@ -1,8 +1,8 @@
-package org.jduck;
+package org.duckwings;
 
-import org.jduck.internal.MethodComparator;
-import org.jduck.internal.TetraFunction;
-import org.jduck.internal.TriFunction;
+import org.duckwings.internal.MethodComparator;
+import org.duckwings.internal.TetraFunction;
+import org.duckwings.internal.TriFunction;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
