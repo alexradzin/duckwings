@@ -19,13 +19,13 @@ The problem is that this is not always possible: model may be already released o
 we have to work with classes developed by different companies (e.g. `Book` is from company A and `Magazine` from company B). 
 
 ### Need to represent something and something else
-* String can be represented as a list of characters. 
-* It may be useful to think about repeating call of `Random.nextInt()` as infinite `Iterator<Integer>` that produces random integers. 
+  * String can be represented as a list of characters.
+  * It may be useful to think about repeating call of `Random.nextInt()` as infinite `Iterator<Integer>` that produces random integers.
 
 ## Description
 JDuck is a small library written in java (v >= 8) that provides 2 implementations of Duck typing programming paradigm:
-* reflection based
-* functional
+  * reflection based
+  * functional
 
 JDuck helps to wrap any object by interface originally not implemented by the class and then use the class as it implements the required interface. 
 
@@ -39,7 +39,6 @@ This solution requires even more boiler plate code and requires serious maintena
 itself as well as convertors from old to new classes and back. The a log of maintenance is required if the original model is changed.
 All solutions that include copying data from one model to another in some cases have serious performance penalty as well. 
 Improved version of this solution may avoid coding of inter model converters by using frameworks like [Dozer](https://github.com/DozerMapper/dozer).
-
 
 ## Solution
 

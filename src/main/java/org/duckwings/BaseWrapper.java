@@ -18,16 +18,17 @@ abstract class BaseWrapper<T, I> implements Wrapper<T, I> {
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     protected final Optional<Function<Method, Throwable>> runtimeFailure;
 
-    protected final Map<Class, Object> defaultValue = new HashMap<Class, Object>() {{
-        put(byte.class, (byte)0);
-        put(short.class, (short)0);
-        put(int.class, 0);
-        put(long.class, 0L);
-        put(char.class, (char)0);
-        put(float.class, 0.0F);
-        put(double.class, 0.0);
-        put(boolean.class, false);
-    }};
+    protected static final Map<Class, Object> defaultValue = new HashMap<>();
+    static {
+        defaultValue.put(byte.class, (byte)0);
+        defaultValue.put(short.class, (short)0);
+        defaultValue.put(int.class, 0);
+        defaultValue.put(long.class, 0L);
+        defaultValue.put(char.class, (char)0);
+        defaultValue.put(float.class, 0.0F);
+        defaultValue.put(double.class, 0.0);
+        defaultValue.put(boolean.class, false);
+    };
 
     protected final Collection<Object> defaultValues;
 

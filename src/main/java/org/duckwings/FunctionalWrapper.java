@@ -158,7 +158,7 @@ public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
             this.function = function;
         }
 
-        abstract Object eval(T target, Object[] args);
+        protected abstract Object eval(T target, Object[] args);
     }
 
     private class NoArgFunctionContainer extends FunctionContainer<Function<T, Object>> {
@@ -167,7 +167,7 @@ public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
         }
 
         @Override
-        Object eval(T target, Object[] args) {
+        protected Object eval(T target, Object[] args) {
             return function.apply(target);
         }
     }
@@ -178,7 +178,7 @@ public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
         }
 
         @Override
-        Object eval(T target, Object[] args) {
+        protected Object eval(T target, Object[] args) {
             @SuppressWarnings("unchecked")
             P arg = (P)args[0];
             return function.apply(target, arg);
@@ -191,7 +191,7 @@ public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
         }
 
         @Override
-        Object eval(T target, Object[] args) {
+        protected Object eval(T target, Object[] args) {
             @SuppressWarnings("unchecked") P1 arg1 = (P1)args[0];
             @SuppressWarnings("unchecked") P2 arg2 = (P2)args[1];
             return function.apply(target, arg1, arg2);
@@ -204,7 +204,7 @@ public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
         }
 
         @Override
-        Object eval(T target, Object[] args) {
+        protected Object eval(T target, Object[] args) {
             @SuppressWarnings("unchecked") P1 arg1 = (P1)args[0];
             @SuppressWarnings("unchecked") P2 arg2 = (P2)args[1];
             @SuppressWarnings("unchecked") P3 arg3 = (P3)args[2];
