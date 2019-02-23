@@ -67,9 +67,9 @@ class DuckWingsTest {
 
     @Test
     void throwIfAbsentDuringBuildingWhenMethodExists() {
-        DuckWings.builder()
+        assertEquals(0, DuckWings.builder()
                 .throwIfAbsentDuringBuilding((m) -> new NoSuchMethodException(format("Method %s does not exist", m.getName())))
-                .reflect(Length.class).wrap(""); // method length exists in class String
+                .reflect(Length.class).wrap("").length()); // method length exists in class String
     }
 
     @Test
@@ -92,6 +92,21 @@ class DuckWingsTest {
                 .reflect(Length.class).wrap("hello").length());
     }
 
+    @Test
+    void charAtWrongPositionNoException() {
+        assertEquals(0, DuckWings.builder().reflect(ExtendedString.class).wrap("hello").charAt(10));
+    }
+
+    @Test
+    void charAtWrongPositionException() {
+        RuntimeException e = assertThrows(RuntimeException.class,
+                () -> DuckWings.builder()
+                .throwIfAbsentAtRuntime((m) -> new NoSuchMethodException(format("Method %s does not exist", m.getName())))
+                .reflect(ExtendedString.class).wrap("hello").charAt(10)
+        );
+        assertEquals(NoSuchMethodException.class, e.getCause().getClass());
+    }
+
 
     @Test
     void functionalStringAddFunctions() {
@@ -101,8 +116,6 @@ class DuckWingsTest {
                 .using(ExtendedString::toBoolean, Boolean::parseBoolean)
                 .using(ExtendedString::startsWithIgnoreCase, (s, s2) -> s.toLowerCase().startsWith(s2.toLowerCase()))
                 .using(ExtendedString::substring, String::substring);
-
-
 
         assertEquals(5, wrapper.wrap("5").toInt());
         long now = System.currentTimeMillis();
