@@ -1,14 +1,16 @@
 package org.duckwings;
 
+import org.duckwings.internal.MethodComparator;
+
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeSet;
 import java.util.function.Function;
 
 abstract class BaseWrapper<T, I> implements Wrapper<T, I> {
@@ -49,8 +51,13 @@ abstract class BaseWrapper<T, I> implements Wrapper<T, I> {
     @Override
     public I wrap(T target) {
         if(constructionFailure.isPresent()) {
-            Optional<Method> missingMethod = Arrays.stream(face.getMethods()).filter(m -> !definedMethods(target).contains(m)).findFirst();
-            missingMethod.ifPresent(method -> sneakyThrow(constructionFailure.get().apply(method)));
+            Collection<Method> definedMethods = new TreeSet<>(new MethodComparator());
+            definedMethods.addAll(definedMethods(target));
+            for (Method m : face.getMethods()) {
+                if (!definedMethods.contains(m)) {
+                    sneakyThrow(constructionFailure.get().apply(m));
+                }
+            }
         }
 
         @SuppressWarnings("unchecked")
@@ -60,6 +67,11 @@ abstract class BaseWrapper<T, I> implements Wrapper<T, I> {
                 createInvocationHandler(target));
 
         return proxy;
+    }
+
+    @Override
+    public I unwrap(Object obj) {
+        return DuckWings.unwrap(obj);
     }
 
     @SuppressWarnings("unchecked")

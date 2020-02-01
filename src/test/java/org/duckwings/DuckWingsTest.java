@@ -10,13 +10,23 @@ import java.util.List;
 import static java.lang.String.format;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DuckWingsTest {
     @Test
     void reflectiveStringAsCharSequenceLength() {
-       assertEquals("hello".length(), DuckWings.builder().reflect(CharSequence.class).wrap("hello").length());
+        assertEquals("hello".length(), DuckWings.builder().reflect(CharSequence.class).wrap("hello").length());
+    }
+
+    @Test
+    void unwrapReflectiveWrapper() {
+        String str = "hello";
+        Wrapper<String, CharSequence> wrapper = DuckWings.builder().reflect(CharSequence.class);
+        CharSequence wrapped = wrapper.wrap(str);
+        assertEquals(str.length(), wrapped.length());
+        assertSame(str, wrapper.unwrap(wrapped));
     }
 
     @Test
@@ -30,13 +40,26 @@ class DuckWingsTest {
     }
 
     @Test
+    void unwrapFunctionalWrapper() {
+        String str = "hello";
+        Wrapper<String, Length> wrapper = DuckWings.builder().functional(Length.class, String.class).using(Length::length, String::length);
+        Length wrapped = wrapper.wrap(str);
+        assertEquals(str.length(), wrapped.length());
+        assertSame(str, wrapper.unwrap(wrapped));
+    }
+
+    @Test
+    void wrongUnwrap() {
+        assertEquals("not a proxy instance", assertThrows(IllegalArgumentException.class, () -> DuckWings.builder().reflect(CharSequence.class).unwrap("hello")).getMessage());
+    }
+
+    @Test
     void functionalStringAsCollectionLength() {
         assertEquals("function".length(), DuckWings.builder().functional(Collection.class, String.class).using(Collection::size, String::length).wrap("function").size());
     }
 
     @Test
     void functionalStringAsCollection() {
-
         Wrapper<String, Collection> wrapper = DuckWings.builder().functional(Collection.class, String.class)
                 .using(Collection::size, String::length)
                 .using(Collection::isEmpty, String::isEmpty)
@@ -50,6 +73,14 @@ class DuckWingsTest {
         assertTrue(wrapper.wrap("").isEmpty());
         assertTrue(collectionOverString.contains("f"));
         assertFalse(collectionOverString.contains("Z"));
+    }
+
+    /**
+     * Method {@code length()} does not exist in {@link List} but wrapper ignores this.
+     */
+    @Test
+    void doNotThrowIfMethodDoesNotExist() {
+        DuckWings.builder().reflect(Length.class).wrap(new ArrayList<>()).length();
     }
 
 

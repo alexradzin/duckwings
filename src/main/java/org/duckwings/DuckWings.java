@@ -2,8 +2,10 @@ package org.duckwings;
 
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class DuckWings<T, I> {
     public static WrapperBuilder builder() {
@@ -34,5 +36,10 @@ public class DuckWings<T, I> {
         public <T, I> Wrapper<T, I> reflect(Class<I> faceType) {
             return new ReflectionalWrapper<>(faceType, constructionFailure, runtimeFailure);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <I> I unwrap(Object obj) {
+        return ((Supplier<I>) Proxy.getInvocationHandler(obj)).get();
     }
 }

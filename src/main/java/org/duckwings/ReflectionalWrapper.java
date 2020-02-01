@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class ReflectionalWrapper<T, I> extends BaseWrapper<T, I> {
@@ -28,7 +29,29 @@ public class ReflectionalWrapper<T, I> extends BaseWrapper<T, I> {
     }
 
     protected InvocationHandler createInvocationHandler(T target) {
-        return (proxy, method, args) -> {
+        return new ReflectionalInvocationHandler<>(target);
+    }
+
+
+
+    private Optional<Method> targetMethod(Class<?> targetClass, Method method) {
+        try {
+            return Optional.of(targetClass.getMethod(method.getName(), method.getParameterTypes()));
+        } catch (NoSuchMethodException e) {
+            runtimeFailure.ifPresent(methodThrowableFunction -> sneakyThrow(methodThrowableFunction.apply(method)));
+            return Optional.empty();
+        }
+    }
+
+    private class ReflectionalInvocationHandler<T> implements InvocationHandler, Supplier<T> {
+        private final T target;
+
+        private ReflectionalInvocationHandler(T target) {
+            this.target = target;
+        }
+
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             Optional<Method> m = targetMethod(target.getClass(), method);
             if (m.isPresent()) {
                 try {
@@ -40,17 +63,11 @@ public class ReflectionalWrapper<T, I> extends BaseWrapper<T, I> {
             }
             runtimeFailure.ifPresent(methodThrowableFunction -> sneakyThrow(methodThrowableFunction.apply(method)));
             return defaultValue.get(method.getReturnType());
-        };
-    }
+        }
 
-
-
-    private Optional<Method> targetMethod(Class<?> targetClass, Method method) {
-        try {
-            return Optional.of(targetClass.getMethod(method.getName(), method.getParameterTypes()));
-        } catch (NoSuchMethodException e) {
-            runtimeFailure.ifPresent(methodThrowableFunction -> sneakyThrow(methodThrowableFunction.apply(method)));
-            return Optional.empty();
+        @Override
+        public T get() {
+            return target;
         }
     }
 }

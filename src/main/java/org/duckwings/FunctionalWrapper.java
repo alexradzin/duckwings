@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
     private Map<Method, FunctionContainer<?>> functions = new TreeMap<>(new MethodComparator());
@@ -45,11 +46,7 @@ public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
             }
         }
 
-        if (!found) {
-            throw new IllegalArgumentException("Cannot locate compatible function");
-        }
-
-        return this;
+        return assertFound(found);
     }
 
 
@@ -68,12 +65,7 @@ public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
             }
         }
 
-        if (!found) {
-            throw new IllegalArgumentException("Cannot locate compatible function");
-        }
-
-
-        return this;
+        return assertFound(found);
     }
 
     @SuppressWarnings("unchecked")
@@ -93,13 +85,16 @@ public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
             }
         }
 
+        return assertFound(found);
+    }
+
+    private FunctionalWrapper<T, I> assertFound(boolean found) {
         if (!found) {
             throw new IllegalArgumentException("Cannot locate compatible function");
         }
 
         return this;
     }
-
 
     private <F> I functionCollectingProxy(F classfunc, Function<F, FunctionContainer> containerFactory) {
         @SuppressWarnings("unchecked")
@@ -126,7 +121,7 @@ public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
         return new FunctionalInvocationHandler(target);
     }
 
-    private class FunctionalInvocationHandler implements InvocationHandler {
+    private class FunctionalInvocationHandler implements InvocationHandler, Supplier<T> {
         private final T target;
 
         private FunctionalInvocationHandler(T target) {
@@ -148,6 +143,11 @@ public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
                 runtimeFailure.ifPresent(methodThrowableFunction -> sneakyThrow(methodThrowableFunction.apply(method)));
                 return defaultValue.get(method.getReturnType());
             };
+        }
+
+        @Override
+        public T get() {
+            return target;
         }
     }
 
