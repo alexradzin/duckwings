@@ -1,6 +1,6 @@
 # DuckWings 
 [![CircleCI](https://circleci.com/gh/alexradzin/duckwings.svg?style=svg)](https://circleci.com/gh/alexradzin/duckwings)
-[![Build Status](https://travis-ci.com/alexradzin/enumus.svg?branch=master)](https://travis-ci.com/alexradzin/duckwings)
+[![Build Status](https://travis-ci.com/alexradzin/duckwings.svg?branch=master)](https://travis-ci.com/alexradzin/duckwings)
 [![codecov](https://codecov.io/gh/alexradzin/enumus/branch/master/graph/badge.svg)](https://codecov.io/gh/alexradzin/duckwings)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/bd0a7e8fb5a2469d99d34dcca9a2fd94)](https://www.codacy.com/app/alexradzin/duckwings?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=alexradzin/duckwings&amp;utm_campaign=Badge_Grade)
 
