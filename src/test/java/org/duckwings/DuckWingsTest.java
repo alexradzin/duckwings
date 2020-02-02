@@ -85,6 +85,34 @@ class DuckWingsTest {
 
 
     @Test
+    void functionalDoNotThrowMethodIsNotMapped() {
+        assertEquals(0, DuckWings.builder().functional(Length.class, String.class).wrap("does not matter").length());
+    }
+
+    @Test
+    void foo() {
+        DuckWings.builder().functional(ExtendedString.class, String.class).using(ExtendedString::startsWithIgnoreCase, String::startsWith);
+    }
+
+
+    @Test
+    void functionThatThrowsException() {
+        assertEquals(0, DuckWings.builder().functional(CharSequence.class, String.class)
+                .using(CharSequence::charAt, String::charAt)
+                .wrap("")
+                .charAt(-1));
+    }
+
+    @Test
+    void functionThatThrowsExceptionFromFallbackWrapper() {
+        assertEquals(0, DuckWings.builder().functional(CharSequence.class, String.class)
+                .fallback(DuckWings.builder().reflect(CharSequence.class))
+                .wrap("")
+                .charAt(-1));
+    }
+
+
+    @Test
     void throwIfAbsentDuringBuildingWhenMethodIsMissing() {
         NoSuchMethodException e = assertThrows(
                 NoSuchMethodException.class,
@@ -127,6 +155,7 @@ class DuckWingsTest {
     void charAtWrongPositionNoException() {
         assertEquals(0, DuckWings.builder().reflect(ExtendedString.class).wrap("hello").charAt(10));
     }
+
 
     @Test
     void charAtWrongPositionException() {

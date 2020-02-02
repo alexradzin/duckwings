@@ -145,14 +145,15 @@ public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
         private Function<Object[], Object> invoker(Method method) {
             return args -> {
                 FunctionContainer<?> container = functions.get(method);
-                if (container != null) {
-                    return container.eval(target, args);
-                } else if (fallback != null) {
-                    try {
+                try {
+                    if (container != null) {
+                        return container.eval(target, args);
+                    } else if (fallback != null) {
                         return Proxy.getInvocationHandler(fb).invoke(fb, method, args);
-                    } catch (Throwable throwable) {
-                        // ignore; the exception is processed later in this method (if required)
                     }
+                } catch (Throwable t) {
+                    // does not matter whether exception was thrown during invocation or during the method lookup:
+                    // the decision whether throw exception of return default value is done in right after the if.
                 }
 
                 runtimeFailure.ifPresent(methodThrowableFunction -> sneakyThrow(methodThrowableFunction.apply(method)));
