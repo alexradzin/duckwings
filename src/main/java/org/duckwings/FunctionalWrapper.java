@@ -17,6 +17,7 @@ import java.util.function.Supplier;
 
 public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
     private Map<Method, FunctionContainer<?>> functions = new TreeMap<>(new MethodComparator());
+    private Wrapper<T, I> fallback;
 
     FunctionalWrapper(
             Class<I> face,
@@ -88,6 +89,11 @@ public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
         return assertFound(found);
     }
 
+    public FunctionalWrapper<T, I> fallback(Wrapper<T, I> fallback) {
+        this.fallback = fallback;
+        return this;
+    }
+
     private FunctionalWrapper<T, I> assertFound(boolean found) {
         if (!found) {
             throw new IllegalArgumentException("Cannot locate compatible function");
@@ -123,21 +129,30 @@ public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
 
     private class FunctionalInvocationHandler implements InvocationHandler, Supplier<T> {
         private final T target;
+        private final I fb;
 
         private FunctionalInvocationHandler(T target) {
             this.target = target;
+            fb = fallback == null ? null : fallback.wrap(target);
         }
 
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) {
             return invoker(method).apply(args);
         }
+
         @SuppressWarnings("unchecked")
         private Function<Object[], Object> invoker(Method method) {
             return args -> {
                 FunctionContainer<?> container = functions.get(method);
                 if (container != null) {
                     return container.eval(target, args);
+                } else if (fallback != null) {
+                    try {
+                        return Proxy.getInvocationHandler(fb).invoke(fb, method, args);
+                    } catch (Throwable throwable) {
+                        // ignore; the exception is processed later in this method (if required)
+                    }
                 }
 
                 runtimeFailure.ifPresent(methodThrowableFunction -> sneakyThrow(methodThrowableFunction.apply(method)));
