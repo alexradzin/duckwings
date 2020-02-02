@@ -76,11 +76,11 @@ class DuckWingsTest {
     }
 
     /**
-     * Method {@code length()} does not exist in {@link List} but wrapper ignores this.
+     * Method {@code length()} does not exist in {@link List} but wrapper ignores this and returns default value 0
      */
     @Test
     void doNotThrowIfMethodDoesNotExist() {
-        DuckWings.builder().reflect(Length.class).wrap(new ArrayList<>()).length();
+        assertEquals(0, DuckWings.builder().reflect(Length.class).wrap(new ArrayList<>()).length());
     }
 
 
