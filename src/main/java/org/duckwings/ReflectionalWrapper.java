@@ -3,6 +3,7 @@ package org.duckwings;
 import org.duckwings.internal.MethodComparator;
 
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
@@ -33,12 +34,15 @@ public class ReflectionalWrapper<T, I> extends BaseWrapper<T, I> {
     }
 
     private Optional<Method> targetMethod(Class<?> targetClass, Method method) {
-        try {
-            return Optional.of(targetClass.getMethod(method.getName(), method.getParameterTypes()));
-        } catch (NoSuchMethodException e) {
-            runtimeFailure.ifPresent(methodThrowableFunction -> sneakyThrow(methodThrowableFunction.apply(method)));
-            return Optional.empty();
+        for (Class<?> c = targetClass; c != null; c = c.getSuperclass()) {
+            try {
+                return Optional.of(c.getDeclaredMethod(method.getName(), method.getParameterTypes()));
+            } catch (NoSuchMethodException e) {
+                // ignore and try the next candidate
+            }
         }
+        runtimeFailure.ifPresent(methodThrowableFunction -> sneakyThrow(methodThrowableFunction.apply(method)));
+        return Optional.empty();
     }
 
     private class ReflectionalInvocationHandler<T> implements InvocationHandler, Supplier<T> {
@@ -55,7 +59,8 @@ public class ReflectionalWrapper<T, I> extends BaseWrapper<T, I> {
             Optional<Method> m = targetMethod(target.getClass(), method);
             if (m.isPresent()) {
                 try {
-                    return m.get().invoke(target, args);
+                    return invoke(m.get(), target, args);
+                    //return m.get().invoke(target, args);
                 } catch (ReflectiveOperationException e) {
                     // does not matter whether exception was thrown during invocation or during the method lookup:
                     // the decision whether throw exception of return default value is done in right after the if.
@@ -65,7 +70,7 @@ public class ReflectionalWrapper<T, I> extends BaseWrapper<T, I> {
                     m = targetMethod(obj.getClass(), method);
                     if (m.isPresent()) {
                         try {
-                            return m.get().invoke(obj, args);
+                            return invoke(m.get(), obj, args);
                         } catch (ReflectiveOperationException e) {
                             break;
                         }
@@ -74,6 +79,11 @@ public class ReflectionalWrapper<T, I> extends BaseWrapper<T, I> {
             }
             runtimeFailure.ifPresent(methodThrowableFunction -> sneakyThrow(methodThrowableFunction.apply(method)));
             return defaultValue.get(method.getReturnType());
+        }
+
+        private Object invoke(Method m, Object obj, Object[] args) throws InvocationTargetException, IllegalAccessException {
+            m.setAccessible(true);
+            return m.invoke(obj, args);
         }
 
         @Override

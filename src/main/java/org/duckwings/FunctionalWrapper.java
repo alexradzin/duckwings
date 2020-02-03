@@ -18,6 +18,7 @@ import java.util.function.Supplier;
 public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
     private Map<Method, FunctionContainer<?>> functions = new TreeMap<>(new MethodComparator());
     private Wrapper<T, I> fallback;
+    private Wrapper[] otherWrappers;
 
     FunctionalWrapper(
             Class<I> face,
@@ -28,7 +29,7 @@ public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
 
 
     public FunctionalWrapper<T, I> using(Function<I, Object> facefunc, Function<T, Object> classfunc) {
-        facefunc.apply(functionCollectingProxy(classfunc, NoArgFunctionContainer::new));
+        facefunc.apply(functionCollectingProxy(classfunc, f -> new NoArgFunctionContainer((Function<Object, Object>)f)));
         return this;
     }
 
@@ -39,7 +40,7 @@ public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
         boolean found = false;
         for (Object value : defaultValues) {
             try {
-                facefunc.apply(functionCollectingProxy(classfunc, f -> new OneArgFunctionContainer<>(f)), (P)value);
+                facefunc.apply(functionCollectingProxy(classfunc, f -> new OneArgFunctionContainer(f)), (P)value);
                 found = true;
                 break;
             } catch (NullPointerException | ClassCastException e) {
@@ -94,6 +95,11 @@ public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
         return this;
     }
 
+    public FunctionalWrapper<T, I> with(Wrapper ... others) {
+        this.otherWrappers = others;
+        return this;
+    }
+
     private FunctionalWrapper<T, I> assertFound(boolean found) {
         if (!found) {
             throw new IllegalArgumentException("Cannot locate compatible function");
@@ -124,16 +130,18 @@ public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
 
     @Override
     protected InvocationHandler createInvocationHandler(T target, Object ... others) {
-        return new FunctionalInvocationHandler(target);
+        return new FunctionalInvocationHandler(target, others);
     }
 
     private class FunctionalInvocationHandler implements InvocationHandler, Supplier<T> {
         private final T target;
         private final I fb;
+        private final Object[] others;
 
-        private FunctionalInvocationHandler(T target) {
+        private FunctionalInvocationHandler(T target, Object[] others) {
             this.target = target;
             fb = fallback == null ? null : fallback.wrap(target);
+            this.others = others;
         }
 
         @Override
@@ -148,8 +156,19 @@ public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
                 try {
                     if (container != null) {
                         return container.eval(target, args);
-                    } else if (fallback != null) {
-                        return Proxy.getInvocationHandler(fb).invoke(fb, method, args);
+                    } else {
+                        int n = others.length;
+                        for (int i = 0; i < n ; i++) {
+                            Wrapper w = FunctionalWrapper.this.otherWrappers[i];
+                            if (w instanceof FunctionalWrapper && ((FunctionalWrapper)w).functions.containsKey(method)) {
+                                FunctionContainer<?> container2 = (FunctionContainer<?>)((FunctionalWrapper)w).functions.get(method);
+                                return container2.eval(others[i], args);
+                            }
+                        }
+
+                        if (fallback != null) {
+                            return Proxy.getInvocationHandler(fb).invoke(fb, method, args);
+                        }
                     }
                 } catch (Throwable t) {
                     // does not matter whether exception was thrown during invocation or during the method lookup:
@@ -174,53 +193,53 @@ public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
             this.function = function;
         }
 
-        protected abstract Object eval(T target, Object[] args);
+        protected abstract Object eval(Object target, Object[] args);
     }
 
-    private class NoArgFunctionContainer extends FunctionContainer<Function<T, Object>> {
-        NoArgFunctionContainer(Function<T, Object> function) {
+    private class NoArgFunctionContainer extends FunctionContainer<Function<Object, Object>> {
+        NoArgFunctionContainer(Function<Object, Object> function) {
             super(function);
         }
 
         @Override
-        protected Object eval(T target, Object[] args) {
+        protected Object eval(Object target, Object[] args) {
             return function.apply(target);
         }
     }
 
-    private class OneArgFunctionContainer<P, R> extends FunctionContainer<BiFunction<T, P, R>> {
-        OneArgFunctionContainer(BiFunction<T, P, R> function) {
+    private class OneArgFunctionContainer<P, R> extends FunctionContainer<BiFunction<Object, P, R>> {
+        OneArgFunctionContainer(BiFunction<Object, P, R> function) {
             super(function);
         }
 
         @Override
-        protected Object eval(T target, Object[] args) {
+        protected Object eval(Object target, Object[] args) {
             @SuppressWarnings("unchecked")
             P arg = (P)args[0];
             return function.apply(target, arg);
         }
     }
 
-    private class TwoArgFunctionContainer<P1, P2, R> extends FunctionContainer<TriFunction<T, P1, P2, R>> {
-        TwoArgFunctionContainer(TriFunction<T, P1, P2, R> function) {
+    private class TwoArgFunctionContainer<P1, P2, R> extends FunctionContainer<TriFunction<Object, P1, P2, R>> {
+        TwoArgFunctionContainer(TriFunction<Object, P1, P2, R> function) {
             super(function);
         }
 
         @Override
-        protected Object eval(T target, Object[] args) {
+        protected Object eval(Object target, Object[] args) {
             @SuppressWarnings("unchecked") P1 arg1 = (P1)args[0];
             @SuppressWarnings("unchecked") P2 arg2 = (P2)args[1];
             return function.apply(target, arg1, arg2);
         }
     }
 
-    private class ThreeArgFunctionContainer<P1, P2, P3, R> extends FunctionContainer<TetraFunction<T, P1, P2, P3, R>> {
-        ThreeArgFunctionContainer(TetraFunction<T, P1, P2, P3, R>function) {
+    private class ThreeArgFunctionContainer<P1, P2, P3, R> extends FunctionContainer<TetraFunction<Object, P1, P2, P3, R>> {
+        ThreeArgFunctionContainer(TetraFunction<Object, P1, P2, P3, R>function) {
             super(function);
         }
 
         @Override
-        protected Object eval(T target, Object[] args) {
+        protected Object eval(Object target, Object[] args) {
             @SuppressWarnings("unchecked") P1 arg1 = (P1)args[0];
             @SuppressWarnings("unchecked") P2 arg2 = (P2)args[1];
             @SuppressWarnings("unchecked") P3 arg3 = (P3)args[2];
