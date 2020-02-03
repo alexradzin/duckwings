@@ -22,17 +22,15 @@ public class ReflectionalWrapper<T, I> extends BaseWrapper<T, I> {
     }
 
 
-    protected Collection<Method> definedMethods(T target) {
+    protected Collection<Method> definedMethods(Object target) {
         Set<Method> targetMethods = new TreeSet<>(new MethodComparator());
         targetMethods.addAll(Arrays.stream(target.getClass().getMethods()).collect(Collectors.toList()));
         return targetMethods;
     }
 
-    protected InvocationHandler createInvocationHandler(T target) {
-        return new ReflectionalInvocationHandler<>(target);
+    protected InvocationHandler createInvocationHandler(T target, Object ... others) {
+        return new ReflectionalInvocationHandler<>(target, others);
     }
-
-
 
     private Optional<Method> targetMethod(Class<?> targetClass, Method method) {
         try {
@@ -45,9 +43,11 @@ public class ReflectionalWrapper<T, I> extends BaseWrapper<T, I> {
 
     private class ReflectionalInvocationHandler<T> implements InvocationHandler, Supplier<T> {
         private final T target;
+        private final Object[] others;
 
-        private ReflectionalInvocationHandler(T target) {
+        private ReflectionalInvocationHandler(T target, Object[] others) {
             this.target = target;
+            this.others = others;
         }
 
         @Override
@@ -59,6 +59,17 @@ public class ReflectionalWrapper<T, I> extends BaseWrapper<T, I> {
                 } catch (ReflectiveOperationException e) {
                     // does not matter whether exception was thrown during invocation or during the method lookup:
                     // the decision whether throw exception of return default value is done in right after the if.
+                }
+            } else {
+                for (Object obj : others) {
+                    m = targetMethod(obj.getClass(), method);
+                    if (m.isPresent()) {
+                        try {
+                            return m.get().invoke(obj, args);
+                        } catch (ReflectiveOperationException e) {
+                            break;
+                        }
+                    }
                 }
             }
             runtimeFailure.ifPresent(methodThrowableFunction -> sneakyThrow(methodThrowableFunction.apply(method)));

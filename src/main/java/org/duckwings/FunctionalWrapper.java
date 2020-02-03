@@ -118,12 +118,12 @@ public class FunctionalWrapper<T, I> extends BaseWrapper<T, I> {
 
 
     @Override
-    protected Collection<Method> definedMethods(T target) {
+    protected Collection<Method> definedMethods(Object target) {
         return functions.keySet();
     }
 
     @Override
-    protected InvocationHandler createInvocationHandler(T target) {
+    protected InvocationHandler createInvocationHandler(T target, Object ... others) {
         return new FunctionalInvocationHandler(target);
     }
 

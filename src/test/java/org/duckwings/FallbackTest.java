@@ -23,6 +23,4 @@ public class FallbackTest {
         assertEquals("John", w.getFirstName());
         assertEquals("Lennon", w.getLastName());
     }
-
-
 }

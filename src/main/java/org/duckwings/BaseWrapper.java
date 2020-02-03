@@ -6,6 +6,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -49,10 +50,11 @@ abstract class BaseWrapper<T, I> implements Wrapper<T, I> {
     }
 
     @Override
-    public I wrap(T target) {
+    public I wrap(T target, Object ... others) {
         if(constructionFailure.isPresent()) {
             Collection<Method> definedMethods = new TreeSet<>(new MethodComparator());
             definedMethods.addAll(definedMethods(target));
+            Arrays.stream(others).map(this::definedMethods).forEach(definedMethods::addAll);
             for (Method m : face.getMethods()) {
                 if (!definedMethods.contains(m)) {
                     sneakyThrow(constructionFailure.get().apply(m));
@@ -64,7 +66,7 @@ abstract class BaseWrapper<T, I> implements Wrapper<T, I> {
         I proxy = (I) Proxy.newProxyInstance(
                 Thread.currentThread().getContextClassLoader(),
                 new Class[] {face},
-                createInvocationHandler(target));
+                createInvocationHandler(target, others));
 
         return proxy;
     }
@@ -79,6 +81,6 @@ abstract class BaseWrapper<T, I> implements Wrapper<T, I> {
         throw (E) e;
     }
 
-    protected abstract Collection<Method> definedMethods(T target);
-    protected abstract InvocationHandler createInvocationHandler(T target);
+    protected abstract Collection<Method> definedMethods(Object target);
+    protected abstract InvocationHandler createInvocationHandler(T target, Object ... others);
 }
