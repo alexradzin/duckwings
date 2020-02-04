@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Calendar;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MultipleObjectsTest {
     @Test
@@ -26,6 +27,28 @@ class MultipleObjectsTest {
                 );
 
         wrapperWithMultipleObjects(wrapper);
+    }
+
+
+    @Test
+    void reflectionalWrapperMultipleObjectsSecondFailsNoFailureHandler() {
+        // The primary object is Integer, secondary is string; we call String's method with wrong argument; this causes exception
+        // that is ignored becuase not handler is defined and the default value is returned
+        assertEquals(0, DuckWings.builder().reflect(CharSequence.class).wrap(123, "").charAt(-1));
+    }
+
+    @Test
+    void reflectionalWrapperMultipleObjectsSecondFailsAndThrowsException() {
+        assertEquals(
+                "charAt",
+                assertThrows(
+                        IllegalArgumentException.class,
+                        () -> DuckWings.builder()
+                                .throwIfAbsentAtRuntime(m -> new IllegalArgumentException(m.getName()))
+                                .reflect(CharSequence.class)
+                                .wrap(123, "")
+                                .charAt(-1))
+                        .getMessage());
     }
 
     void wrapperWithMultipleObjects(Wrapper<Person, PersonalData> wrapper) {
