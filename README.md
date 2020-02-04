@@ -27,12 +27,15 @@ we have to work with classes developed by different companies (e.g. `Book` is fr
   * String can be represented as a list of characters.
   * It may be useful to think about repeating call of `Random.nextInt()` as infinite `Iterator<Integer>` that produces random integers.
 
+### Represent information from several objects in unified view
+Assume that we have class `Person` that represents the personal data like id, name, date of birth etc. Additionally we have other class named `BankAccount` that holds the bank identifier, the credit card number etc. We can retrieve pairs of `Person` and `BankAccount` and want to expose to objects that hold id, first and last name of the person as well as his/her credit card number. Additionally we have to replace all digits of the credit card except the last 4 digits using `*`. DuckWings helps to solve this problem without boiler plate code. 
+
 ## Description
-JDuck is a small library written in java (v >= 8) that provides 2 implementations of Duck typing programming paradigm:
+DuckWings is a small library written in java (v >= 8) that provides 2 implementations of Duck typing programming paradigm:
   * reflection based
   * functional
 
-JDuck helps to wrap any object by interface originally not implemented by the class and then use the class as it implements the required interface. 
+DuckWings helps to wrap any object by interface originally not implemented by the class and then use the class as it implements the required interface. DuckWings uses dynamic proxy under the hood. 
 
 ## Alternatives
 
@@ -45,7 +48,7 @@ itself as well as convertors from old to new classes and back. The a log of main
 All solutions that include copying data from one model to another in some cases have serious performance penalty as well. 
 Improved version of this solution may avoid coding of inter model converters by using frameworks like [Dozer](https://github.com/DozerMapper/dozer).
 
-## Solution
+## Simple usage
 
 ```java
 // Model
@@ -69,7 +72,7 @@ interface IdHolder {
 }
 
 // Now we can use these classes as following
-Wrapper<Object, IdHolder> wrapper = JDuck.builder().reflect(IdHolder.class);
+Wrapper<Object, IdHolder> wrapper = DuckWings.builder().reflect(IdHolder.class);
 IdHolder book = wrapper.wrap(new Book());
 IdHolder magazine = wrapper.wrap(new Magazine());
 List<IdHolder> list = Arrays.asList(book, magazine);
@@ -104,3 +107,41 @@ Wrapper<Collection, Length> colWrapper = JDuck.builder().functional(Length.class
         .using(Length::length, Collection::size);
 ```
 Now we can wrap string and collection and access their length using uniform way. 
+
+
+## Advanced features
+### Fallback
+We have class `Person`:
+
+```java
+class Person {
+    int id;
+    String firstName;
+    String lastName;
+    // getters & setters
+}
+```
+and want to expose its data as it `Person` was implementing interface `PersonalData`:
+```java
+interface PersonalData {
+    String getFirstName();
+    String getLastName();
+    String getFullName(); // concatenation of first and last name with space between them
+}
+```
+Methods `getFirstName()` and `getLastName()` can be mapped directly to the coresponding implementation of class `Person` but method `getFullName()` must be implemented. We can do this as following using functional builder:
+```java
+        Wrapper<Person, PersonalData> wrapper = DuckWings.builder().functional(PersonalData.class, Person.class)
+                .using(PersonalData::getFirstName, Person::getFirstName)
+                .using(PersonalData::getLastName, Person::getLastName)
+                .using(PersonalData::getFullName, p -> p.getFirstName() + " " + p.getLastName());
+```
+However we want to avoid boiler plate code that maps `getFirstName` and `getLastName`. This can be achieved using fallback to reflectional implementation:
+```java
+        Wrapper<Person, PersonalData> wrapper = DuckWings.builder().functional(PersonalData.class, Person.class)
+                .using(PersonalData::getFullName, p -> p.getFirstName() + " " + p.getLastName())
+                .fallback(DuckWings.builder().reflect(PersonalData.class));
+```
+
+### View over multiple objects
+TBD (implemented, not described yet)
