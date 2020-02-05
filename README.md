@@ -144,4 +144,72 @@ However we want to avoid boiler plate code that maps `getFirstName` and `getLast
 ```
 
 ### View over multiple objects
-TBD (implemented, not described yet)
+Sometimes we have to create view that take data from several different java objects (something like SQL join.)
+We will use class `Person` from our previous example. Additionally let's define class `BankAccount`:
+```java
+public class BankAccount {
+    private int id;
+    private String creditCard;
+    // constructor, getters, setters
+}
+```
+We can find personal account that belongs to specific person. Now we have to expose list of `PersonalAccount` that includes person name and the credit card number. `DuckWings` helps to do this with minimal boiler plate code. Let's create interface (not class) `PersonalAccount`:
+
+```java
+public interface PersonalData {
+    String getFirstName();
+    String getLastName();
+    String getCreditCard();
+}
+```
+Just for this example we will intialize objects as following:
+```java
+Person person = new Person("John", "Smith", 1970);
+BankAccount account = new BankAccount(123456, "1111-2222-3333-4567");
+```
+
+Now we can use reflectional implementation of `DuckWings`:
+
+```java
+        Wrapper<Person, PersonalCreditCard> rw = DuckWings.builder().reflect(PersonalCreditCard.class);
+        PersonalCreditCard card1 = rw.wrap(person, account);
+        card1.getFirstName(); //returns the first name of the person
+        card1.getCreditCard(); //returns the credit card number from  object account
+```
+
+We do not have to implement boiler plate class wrapper that holds `Person` and `Account` and delegates method calls to them or duplicates data from these classes. 
+
+We can do even more with functional implementation of `DuckWings`. Our requirements have been changes. We have to show the person full name and only 4 last digits of the credit card number. Let's define `PersonalData` as following:
+```java
+public interface PersonalData {
+    String getFullName();
+    String getCreditCard();
+}
+```
+Now let's define the wrapper that implements required logic:
+```java
+        Wrapper<Person, PersonalCreditCard> fw = DuckWings.builder().functional(PersonalCreditCard.class, Person.class)
+                .using(PersonalCreditCard::getPersonName, p -> p.getFirstName() + " " + p.getLastName())
+                .with(
+                    DuckWings.builder().functional(PersonalCreditCard.class, BankAccount.class)
+                            .using(PersonalCreditCard::getCreditCard,
+                                    a -> IntStream.range(0, 3).boxed().map(i -> Stream.generate(() -> "*").limit(4)
+                                            .collect(Collectors.joining())).collect(Collectors.joining("-")) +
+                                            "-" +
+                                            account.getCreditCard().split("-")[3])
+                );
+
+```
+
+The usage is still simple:
+
+```java
+        PersonalCreditCard card2 = fw.wrap(person, account);
+        card2.getPersonName(); // returns John Smith
+        card2.getCreditCard(); // returns ****-****-****-4567
+``` 
+
+## Conclusions
+DuckWings is a simple and powerful library that implements "duck typing" poradigm for java and can do even more. It helps to expose objects of existing classes without modification as something else without writing boiler plate code and without code and data duplication.
+
+
