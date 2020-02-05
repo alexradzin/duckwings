@@ -3,6 +3,9 @@ package org.duckwings;
 import org.junit.jupiter.api.Test;
 
 import java.util.Calendar;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -51,6 +54,35 @@ class MultipleObjectsTest {
                         .getMessage());
     }
 
+    @Test
+    void example() {
+        Person person = new Person("John", "Smith", 1970);
+        BankAccount account = new BankAccount(123456, "1111-2222-3333-4567");
+        Wrapper<Person, PersonalCreditCard> rw = DuckWings.builder().reflect(PersonalCreditCard.class);
+        PersonalCreditCard card1 = rw.wrap(person, account);
+        assertEquals(account.getCreditCard(), card1.getCreditCard());
+
+
+        Wrapper<Person, PersonalCreditCard> fw = DuckWings.builder().functional(PersonalCreditCard.class, Person.class)
+                .using(PersonalCreditCard::getPersonName, p -> p.getFirstName() + " " + p.getLastName())
+                .with(
+                    DuckWings.builder().functional(PersonalCreditCard.class, BankAccount.class)
+                            .using(PersonalCreditCard::getCreditCard,
+                                    a -> IntStream.range(0, 3).boxed().map(i -> Stream.generate(() -> "*").limit(4)
+                                            .collect(Collectors.joining())).collect(Collectors.joining("-")) +
+                                            "-" +
+                                            account.getCreditCard().split("-")[3])
+                );
+
+
+        PersonalCreditCard card2 = fw.wrap(person, account);
+        assertEquals("John Smith", card2.getPersonName());
+        assertEquals("****-****-****-4567", card2.getCreditCard());
+
+    }
+
+
+
     void wrapperWithMultipleObjects(Wrapper<Person, PersonalData> wrapper) {
         Person john = new Person("John", "Lennon", 1940);
         int age = Calendar.getInstance().get(Calendar.YEAR) - 1940;
@@ -82,4 +114,6 @@ class MultipleObjectsTest {
             return age;
         }
     }
+
+
 }
